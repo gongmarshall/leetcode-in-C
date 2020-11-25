@@ -240,4 +240,125 @@ static int * twoSum(int *nums, int numsSize, int target, int* returnSize)
   
   ```
 
-  
+  # 4.寻找两个正序数组的中位数
+
+> 给定两个大小为 m 和 n 的正序（从小到大）数组 nums1 和 nums2。请你找出并返回这两个正序数组的中位数。
+>
+> 进阶：你能设计一个时间复杂度为 O(log (m+n)) 的算法解决此问题吗？
+>
+>  
+>
+> 示例 1：
+>
+> 输入：nums1 = [1,3], nums2 = [2]
+> 输出：2.00000
+> 解释：合并数组 = [1,2,3] ，中位数 2
+>
+> 示例 2：
+>
+> 输入：nums1 = [1,2], nums2 = [3,4]
+> 输出：2.50000
+> 解释：合并数组 = [1,2,3,4] ，中位数 (2 + 3) / 2 = 2.5
+>
+> 示例 3：
+>
+> 输入：nums1 = [0,0], nums2 = [0,0]
+> 输出：0.00000
+>
+> 示例 4：
+>
+> 输入：nums1 = [], nums2 = [1]
+> 输出：1.00000
+>
+> 示例 5：
+>
+> 输入：nums1 = [2], nums2 = []
+> 输出：2.00000
+>
+> 来源：力扣（LeetCode）
+> 链接：https://leetcode-cn.com/problems/median-of-two-sorted-arrays
+> 著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
+
+* 分析
+
+  从两个数组中弹出（n+m）/2   + 1个最大或最小的项即可
+
+```c
+double findMedianSortedArrays(int* nums1, int nums1Size, int* nums2, int nums2Size){
+
+    int n = nums1Size + nums2Size;
+        int flag;
+        int n1,n2;
+        if(nums1Size == 0 && nums2Size == 0)
+                return 0;
+        if(nums1Size == 0)
+        {
+                if(nums2Size % 2 == 0)
+                {
+                        n1 = nums2Size/2;
+                        n2 = n1 -1;
+                        return ((double)(nums2[n1]+nums2[n2])/2);
+                }
+                else
+                        return (double)(nums2[nums2Size/2]);
+        }
+        if(nums2Size == 0)
+        {
+                if(nums1Size % 2 == 0)
+                {
+                        n1 = nums1Size/2;
+                        n2 = n1 -1;
+
+                        return ((double)(nums1[n1]+nums1[n2])/2);
+                }
+                else
+                        return ((double)nums1[nums1Size/2]);
+        }
+        if(n%2==0)
+                flag = 1;
+        else
+        {
+                flag = 0;
+        }
+        n /=2;
+        n +=1;
+        int i=0;
+        int j=0;
+         while(n--)
+        {
+                if(i==nums1Size)
+                {
+                        n2=n1;
+                        n1=nums2[j];
+                        j++;
+                }
+                else if(j==nums2Size)
+                {
+                        n2=n1;
+                        n1=nums1[i];
+                        i++;
+                }
+                else
+                if(nums1[i]<nums2[j])
+                {
+                        n2 = n1;
+                        n1 = nums1[i];
+                        i++;
+                }
+                else
+                {
+                        n2 = n1;
+                        n1 = nums2[j];
+                        j++;
+                }
+              
+        }
+        if(flag)
+                return ((double)(n1+n2)/2);
+        else
+                        return ((double)(n1));
+
+
+}
+```
+
