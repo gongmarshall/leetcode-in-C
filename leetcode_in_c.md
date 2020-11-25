@@ -172,4 +172,72 @@ static int * twoSum(int *nums, int numsSize, int target, int* returnSize)
   }
   ```
 
+  # 3. 无重复字符的最长子串
+
+  > 给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。
+  >
+  > 示例 1:
+  >
+  > 输入: "abcabcbb"
+  > 输出: 3 
+  > 解释: 因为无重复字符的最长子串是 "abc"，所以其长度为 3。
+  >
+  > 示例 2:
+  >
+  > 输入: "bbbbb"
+  > 输出: 1
+  > 解释: 因为无重复字符的最长子串是 "b"，所以其长度为 1。
+  >
+  > 示例 3:
+  >
+  > 输入: "pwwkew"
+  > 输出: 3
+  > 解释: 因为无重复字符的最长子串是 "wke"，所以其长度为 3。
+  >      请注意，你的答案必须是 子串 的长度，"pwke" 是一个子序列，不是子串。
+  >
+  > 来源：力扣（LeetCode）
+  > 链接：https://leetcode-cn.com/problems/longest-substring-without-repeating-characters
+  > 著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
+
+* 分析
+
+  因为是字符串，所以可以用一个128数组大小的hash表来储存字符，初始状态都设为0xff。
+
+  然后再遍历字符串，对于hash表中为0xff的则是第一次出现，将该字符在字符串中的序号存储到该hash表中。长度自加。
+
+  ​	而当hash表中不为0xff时，则此时该字符在字符串中的序号与之前储存的差值比较，若大于等于此时子串的长度则自加，否则子串长度为这个差值。
+
+  比较子串长度获取最大值。
+
+  ```c
+  int lengthOfLongestSubstring(char * s){
+  int Shash[128];
+          memset(Shash, -1, sizeof(Shash));
+          int max = 0;
+          if (s == NULL)
+                  return 0;
+          int i;
+          int len=0;
+          for(i=0; s[i] != '\0'; i++)
+          {
+                 
+                  if(Shash[s[i]] == -1)
+                          len++;
+                  else
+                  {
+                          
+                          if(i-Shash[s[i]]>len)
+                                  len++;
+                          else
+                                  len=i-Shash[s[i]];
+                  }
+                  Shash[s[i]] = i;
+                  if(max < len)
+                          max = len;
+          }
+          return max;
+  }
+  
+  ```
+
   
