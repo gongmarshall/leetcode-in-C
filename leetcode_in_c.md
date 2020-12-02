@@ -362,3 +362,41 @@ double findMedianSortedArrays(int* nums1, int nums1Size, int* nums2, int nums2Si
 }
 ```
 
+# 5. 最长回文子串
+
+> 给定一个字符串 s，找到 s 中最长的回文子串。你可以假设 s 的最大长度为 1000。
+>
+> 示例 1：
+>
+> 输入: "babad"
+> 输出: "bab"
+> 注意: "aba" 也是一个有效答案。
+>
+> 示例 2：
+>
+> 输入: "cbbd"
+> 输出: "bb"
+>
+> 来源：力扣（LeetCode）
+> 链接：https://leetcode-cn.com/problems/longest-palindromic-substring
+> 著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
+
+* 分析
+
+  马拉车算法：
+
+  1. 总的来说就是在字符串间插入分割符‘#’。
+
+  2. 遍历插入分割符后的数组，以该数组的索引为中心来向两侧散开
+
+     1. mx>i ?min(p[2*id - i], mx - i): 1;
+
+     2. while(S[i+p[i]] == t[i-p[i]]) ++p[i];
+
+        1. (mx<i+p[i]){
+
+           ​	mx = i+p[i];
+
+           ​	id=i;
+
+           }
