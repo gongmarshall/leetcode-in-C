@@ -77,3 +77,6 @@
    lrwx------ 1 marshall marshall 64 3月  18 14:22 0 -> /dev/pts/2
    lrwx------ 1 marshall marshall 64 3月  18 14:22 1 -> /dev/pts/2
    lrwx------ 1 marshall marshall 64 3月  18 14:22 2 -> /dev/pts/2
+
+* fflush(stdout)可以刷新printf的缓存
+* rc = lseek(fd, 0, SEEK_END)返回文件末尾的偏移量单位为字节。
