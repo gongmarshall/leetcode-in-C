@@ -1,3 +1,6 @@
 [submodule "linux/linux_programming_interface/solutions/lpi"]
 	path = linux/linux_programming_interface/solutions/lpi
 	url = https://github.com/rmascarenhas/lpi.git
+[submodule "go/gogl.io"]
+	path = go/gogl.io
+	url = https://github.com/adonovan/gopl.io.git
