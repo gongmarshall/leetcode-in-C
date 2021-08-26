@@ -339,100 +339,55 @@ alloca分配内存的速度要快于malloc(),因为编译器将alloca()作为内
 
 # 8 时间
 
-gmtime(const time_t *timep); //glibc/time/gmtime.c
+* int gettimeofday(struct timeval *tv, sturct timezone *tz)
+
+  tz已废弃，应始终设置为NULL
+
+* time_t time(time_t *timep)
+
+  返回自Epoch以来的秒数，与gettimeofday中tv参数中tv_sec字段数值相同。如果timep参数不为NULL那么还会将自Epoch以来的秒数置于timep所指向的位置。
 
 ```c
-/* Convert `time_t' to `struct tm' in UTC.
-   Copyright (C) 1991-2019 Free Software Foundation, Inc.
-   This file is part of the GNU C Library.
-   The GNU C Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Lesser General Public
-   License as published by the Free Software Foundation; either
-   version 2.1 of the License, or (at your option) any later version.
-   The GNU C Library is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Lesser General Public License for more details.
-   You should have received a copy of the GNU Lesser General Public
-   License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
-#include <time.h>
-/* Return the `struct tm' representation of *T in UTC,
-   using *TP to store the result.  */
-struct tm *
-__gmtime64_r (const __time64_t *t, struct tm *tp)
-{
-  return __tz_convert (*t, 0, tp);
+struct timeval {
+    time_t tv_sec; /* Seconds since 00:00:00, 1 jan 1970 UTC */
+    suseconds_t tv_usec; /* Additional microseconds (long int) */
 }
-/* Provide a 32-bit variant if needed.  */
-#if __TIMESIZE != 64
-libc_hidden_def (__gmtime64_r)
-struct tm *
-__gmtime_r (const time_t *t, struct tm *tp)
-{
-  __time64_t t64 = *t;
-  return __gmtime64_r (&t64, tp);
-}
-#endif
-libc_hidden_def (__gmtime_r)
-weak_alias (__gmtime_r, gmtime_r)
-/* Return the `struct tm' representation of *T in UTC.  */
-struct tm *
-__gmtime64 (const __time64_t *t)
-{
-  return __tz_convert (*t, 0, &_tmbuf);
-}
-/* Provide a 32-bit variant if needed.  */
-#if __TIMESIZE != 64
-libc_hidden_def (__gmtime64)
-struct tm *
-gmtime (const time_t *t)  
-{
-  __time64_t t64 = *t;
-  return __gmtime64 (&t64);
-}
-#endif
-__tz_convert (__time64_t timer, int use_localtime, struct tm *tp)
-{
-  long int leap_correction;
-  int leap_extra_secs;
-  __libc_lock_lock (tzset_lock);
-  /* Update internal database according to current TZ setting.
-     POSIX.1 8.3.7.2 says that localtime_r is not required to set tzname.
-     This is a good idea since this allows at least a bit more parallelism.  */
-  tzset_internal (tp == &_tmbuf && use_localtime);
-  if (__use_tzfile)
-    __tzfile_compute (timer, use_localtime, &leap_correction,
-                      &leap_extra_secs, tp);
-  else
-    {
-      if (! __offtime (timer, 0, tp))
-        tp = NULL;
-      else
-        __tz_compute (timer, tp, use_localtime);
-      leap_correction = 0L;
-      leap_extra_secs = 0;
-    }
-  __libc_lock_unlock (tzset_lock);
-  if (tp)
-    {
-      if (! use_localtime)
-        {
-          tp->tm_isdst = 0;
-          tp->tm_zone = "GMT";
-          tp->tm_gmtoff = 0L;
-        }
-      if (__offtime (timer, tp->tm_gmtoff - leap_correction, tp))
-        tp->tm_sec += leap_extra_secs;
-      else
-        tp = NULL;
-    }
-  return tp;
-}
-
 
 
 ```
+
+* time_t 转换格式
+
+  * char *ctime(const time_t *timep)
+
+    timestamp-> wed Jun 8 14:22:34 2021格式
+
+* time_t和时间之间的转换
+
+  ```c
+  struct tm {
+      int tm_sec;
+      int tm_min;
+      int tm_hour;
+      int tm_mday;
+      int tm_mon; /* 0-11 */
+      int tm_year; /* year since 1900 */
+      int tm_wday; /* Day of the week (Sunday = 0) */
+      int tm_yday; /* Day in the year (0-365; 1 Jan = 0) */
+      int tm_isdst; /* Daylight saving time flag
+      				>0: DST is in effect
+      				=0: DST is not effect;
+      				<0: DST information not available*/
+  }
+  
+  struct tm *gmtime(const time_t *timep);
+  struct tm *localtime(const time_t *timep);
+  time_t mktime(struct tm *timeptr);
+  ```
+
+  gmtime()和localtime()可将time_t值转换为一个所谓的分解时间。localtime()需要考虑时区和夏令时设置，对应系统本地时间的分解时间。
+
+  mktime()将本地时区的分解时间翻译为time_t值
 
 # 系统和进程信息
 
@@ -440,9 +395,79 @@ __tz_convert (__time64_t timer, int use_localtime, struct tm *tp)
 
 
 
+# 文件I/O缓冲
 
+* 设置一个stdio流的缓冲模式
 
+  调用setvbuf()函数，可以控制stdio的使用缓冲形式。
 
+  ```c
+  int setvbuf(FILE *stream, char *buf, int inode, size_t size)
+  ```
+
+  stream标识将要修改哪个文件流的缓冲。buf和size为缓冲区和大小
+
+* 刷新stdio缓冲区
+
+  ```c
+  int fflush(FILE *stream);
+  ```
+
+  若stream为NULL，则fflush()将刷新所有的stdio缓冲区
+
+* 用于控制文件I/O内核缓冲的系统调用
+
+  fsync()系统调用将使缓冲数据和与打开文件描述符fd相关的所有元数据都刷新到磁盘上。调用fsync()会强制使文件处于Synchronized I/O file integrity completion状态。
+
+  ```c
+  #include <unistd.h>
+  
+  int fsync(int fd);
+  ```
+
+  sync()系统调用会使包含更新文件信息的所有内核缓冲区（即数据块、指针块、元数据等）刷新到磁盘上。
+
+  ```c
+  #include <unistd.h>
+  
+  void sync(void);
+  ```
+
+* 使所有写入同步：O_SYNC
+
+  调用open()函数时如指定O_SYNC标志，则会使所有后续输出同步。
+
+  fd=open(pathname, O_WRONLY|O_SYNC)
+
+  调用open()后，每个write()调用会自动将文件数据和元数据刷新到磁盘上
+
+* 绕过缓冲区高速缓存：直接I/O
+
+  open()打开文件或设备时指定O_DIRECT标志
+
+# 文件系统
+
+* 文件系统结构
+
+  * 引导块
+
+    总是作为文件系统的首块。引导块不为文件系统所用，只是包含用来引导操作系统的信息。
+
+  * 超级块
+
+    紧随引导块，包含与文件系统有关的参数信息，其中包括：
+
+    * i节点表容量
+    * 文件系统中逻辑块大小
+    * 以逻辑块计，文件系统的大小
+
+  * i节点表
+
+    文件系统中的每个文件或目录在i节点表中都会对应唯一一条记录。
+
+  * 数据块
+
+    文件系统的大部分空间都用于存放数据，以构成驻留在文件系统上的文件和目录
 
 # 信号
 
@@ -481,4 +506,97 @@ pid要视情况而定：
   kill函数的sig为0时，则无信号发送。kill()会去执行错误检查，查看是否可以向目标进程发送信号。这意味着，可以使用空信号来检测具有特定进程ID的进程是否存在。若发送空信号失败，且errno为ESRCH,则表明目标进程不存在。如果调用失败，且errno为EPERM则表示进程存在,但无权向目标进程发送信号。如果返回值为0表示进程存在。
 
 raise(int sig):对自身发送信号
+
+* 显示信号描述
+
+  char *strsignal(int sig);
+
+* 信号集
+
+  ```c
+  int sigemptyset(sigset_t *set);
+  int sigfillset(sigset_t *set);
+  int sigaddset(sigset_t *set, int sig);
+  int sigdelset(sigset_t *set, int sig);
+  int sigismember(sigset_t *set, int sig)
+  ```
+
+  sigemptyset()函数初始化一个未包含任何成员的信号集。sigfillset()函数则初始化一个信号集，使其包含所有的信号（包括实时信号）.
+
+  如果sig是set的一个成员，那么sigismember()函数返回1（true），否则返回0.
+
+* 信号掩码
+
+```c
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset)
+```
+
+how:
+
+​	SIG_BLOCK
+
+​		将set指向信号集内的指定信号添加到信号掩码中。将信号掩码设置为当前值和set的并集。
+
+​	SIG_UNBLOCK
+
+​		移除信号从信号掩码中
+
+​	SIG_SETMASK
+
+​		将set指向的信号集赋给信号掩码
+
+oldset返回旧的信号掩码
+
+* 处于等待信号
+
+  ```c
+  int sigpending(sigset_t *set);
+  ```
+
+  sigpending()系统调用为调用进程返回处于等待状态的信号集。
+
+* 改变信号处置：sigaction()
+
+  ```c
+  int sigaction(int sig, const struct sigaction *act, struct sigaction *oldact);
+  
+  struct sigaction {
+      void (*sa_handler)(int); /* Address of handler */
+      sigset_t sa_mask; /* Signals blocked during handler invocation */
+      int sa_flags; /* Flags controlling handler invocation */
+      void (*sa_restorer)(void); /* Not for application use */
+  };
+  ```
+
+  sa_mask字段定义了一组信号，在调用由sa_handler所定义的处理器程序时将阻塞该信号。
+
+  sa_flags:
+
+  SA_NODEFER
+
+  ​	捕获该信号时，不会在执行处理器程序时将该信号自动添加到进程掩码中。如果再收到该信号那么正在运行的处理函数会暂停，接着另一个处理函数会开始运行。
+
+  SA_RESTART
+
+  ​	自动重启由信号处理函数程序中断的系统调用
+
+  SA_RESETHAND
+
+  ​	捕获该信号时，会在调用处理器函数之前将信号处置为默认值（即SIG_DFL）(默认情况下，信号处理函数保持建立状态，直至进一步调用sigaction()将其显式解除).也就是下次捕获到该信号时不会调用信号处理函数
+
+* 实时信号
+
+  标准信号中的实时信号只有两个：SIGUSR1和SIGUSR2
+
+  LINUX中扩展了32个不同的实时信号32~63 SIGRTMIN~SIGRTMAX
+
+  * 发送实时信号
+
+    ```c
+    int sigqueue(pid_t pid, int sig, const union sigval value)
+    ```
+
+* 使用掩码来等待信号：sigsuspend()
+
+  
 
